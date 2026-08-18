@@ -17,7 +17,7 @@
  * y que las migraciones de supabase/migrations/ ya estén aplicadas.
  */
 import "dotenv/config";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const DEMO_PASSWORD = "Demo1234!";
 
@@ -85,7 +85,7 @@ async function main() {
   console.log("=================================\n");
 }
 
-async function upsertTenant(admin: ReturnType<typeof createClient>, name: string): Promise<string> {
+async function upsertTenant(admin: SupabaseClient, name: string): Promise<string> {
   const { data: existing, error: selectError } = await admin
     .from("tenants")
     .select("id")
@@ -100,7 +100,7 @@ async function upsertTenant(admin: ReturnType<typeof createClient>, name: string
 }
 
 async function upsertAuthUser(
-  admin: ReturnType<typeof createClient>,
+  admin: SupabaseClient,
   email: string,
   password: string,
   fullName: string,
@@ -122,7 +122,7 @@ async function upsertAuthUser(
 }
 
 async function upsertProfile(
-  admin: ReturnType<typeof createClient>,
+  admin: SupabaseClient,
   userId: string,
   tenantId: string,
   role: string,
@@ -135,7 +135,7 @@ async function upsertProfile(
 }
 
 async function upsertProperty(
-  admin: ReturnType<typeof createClient>,
+  admin: SupabaseClient,
   tenantId: string,
   createdBy: string,
   prop: { title: string; price: number; zone: string; type: string },
