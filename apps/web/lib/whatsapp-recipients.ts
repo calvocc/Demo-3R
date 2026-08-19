@@ -16,5 +16,5 @@ export interface WhatsAppRecipient {
 
 export const WHATSAPP_TEST_RECIPIENTS: WhatsAppRecipient[] = [
   { name: "Jhonathan Calvo", phone: "+573214777790" },
-  { name: "Lorena", phone: "+573188214198" },
+  { name: "Lorena", phone: "+573188214190" },
 ];

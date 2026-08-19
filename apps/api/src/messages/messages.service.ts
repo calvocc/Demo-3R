@@ -18,8 +18,12 @@ export class MessagesService {
 
   list(userId: string) {
     return this.rls.withUserContext(userId, async (client) => {
+      // Orden cronológico ascendente (el más viejo primero) — como una
+      // conversación de chat normal. En orden descendente el hilo se
+      // lee "al revés" y confunde al mezclar la propiedad enviada con
+      // la respuesta del cliente.
       const { rows } = await client.query(
-        `select * from public.messages order by created_at desc`,
+        `select * from public.messages order by created_at asc`,
       );
       return rows;
     });
