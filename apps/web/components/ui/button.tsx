@@ -1,7 +1,7 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 import clsx from "clsx";
 
-type Variant = "default" | "outline" | "ghost" | "destructive" | "subtle";
+type Variant = "default" | "outline" | "ghost" | "destructive" | "subtle" | "success";
 type Size = "default" | "sm" | "icon";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +15,7 @@ const variantClasses: Record<Variant, string> = {
   ghost: "bg-transparent hover:bg-secondary",
   destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
   subtle: "bg-secondary text-foreground hover:bg-border/60",
+  success: "bg-success text-success-foreground hover:bg-success/90 shadow-sm",
 };
 
 const sizeClasses: Record<Size, string> = {

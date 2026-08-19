@@ -27,4 +27,11 @@ export class PublicController {
   listProperties(@Param("tenantId", ParseUUIDPipe) tenantId: string) {
     return this.propertiesService.listPublic(tenantId);
   }
+
+  // Sin tenantId: marketplace con las propiedades activas de todas las
+  // inmobiliarias de la plataforma (usado por /inmobiliaria, sin :id).
+  @Get("properties")
+  listAllProperties() {
+    return this.propertiesService.listAllPublic();
+  }
 }

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { IconBuilding, IconChevronDown, IconMapPin } from "@/components/ui/icons";
+import { Button } from "@/components/ui/button";
+import { IconBuilding, IconChevronDown, IconMapPin, IconMessage } from "@/components/ui/icons";
+import { buildWhatsAppContactUrl, PLATFORM_WHATSAPP_NUMBER } from "@/lib/whatsapp";
 
 export interface PublicProperty {
   id: string;
@@ -12,6 +14,9 @@ export interface PublicProperty {
   zone: string | null;
   type: "venta" | "alquiler";
   created_at: string;
+  // Solo viene poblado en el listado "marketplace" (/inmobiliaria, sin
+  // tenantId) — en la página de una sola inmobiliaria ya se sabe cuál es.
+  tenant_name?: string;
 }
 
 const typeMeta: Record<PublicProperty["type"], { label: string; variant: "primary" | "success" }> = {
@@ -42,6 +47,12 @@ export function PublicPropertyCard({ property }: { property: PublicProperty }) {
           <IconMapPin className="h-3.5 w-3.5 shrink-0" />
           {property.zone ?? "Zona no especificada"}
         </p>
+        {property.tenant_name && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <IconBuilding className="h-3.5 w-3.5 shrink-0" />
+            {property.tenant_name}
+          </p>
+        )}
 
         {property.description && (
           <div className="mt-1">
@@ -56,6 +67,20 @@ export function PublicPropertyCard({ property }: { property: PublicProperty }) {
               <IconChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
             </button>
           </div>
+        )}
+
+        {PLATFORM_WHATSAPP_NUMBER && (
+          <a
+            href={buildWhatsAppContactUrl(property)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3"
+          >
+            <Button variant="success" className="w-full">
+              <IconMessage className="h-4 w-4" />
+              Contactar por WhatsApp
+            </Button>
+          </a>
         )}
       </div>
     </article>
