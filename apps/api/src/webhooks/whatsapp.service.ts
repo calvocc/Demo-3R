@@ -3,6 +3,15 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { RlsQueryService } from "../common/db/rls-query.service";
 import { normalizePhone } from "../common/utils/phone";
+import { WhatsAppClientService } from "../common/whatsapp/whatsapp-client.service";
+
+// Respuesta automática del bot a cualquier mensaje entrante. No hay
+// lógica real de "conectar con un agente" — es el mensaje canned que
+// prueba el flujo de extremo a extremo (el cliente escribe desde la
+// página pública → el bot confirma recepción). Un agente humano sigue
+// viendo y respondiendo la conversación real desde /messages.
+const AUTO_REPLY_BODY =
+  "¡Hola! 👋 Gracias por escribirnos. Ya recibimos tu mensaje sobre la propiedad — un agente de la inmobiliaria lo va a revisar y te va a contactar por acá muy pronto.";
 
 @Injectable()
 export class WhatsAppService {
@@ -11,6 +20,7 @@ export class WhatsAppService {
   constructor(
     private readonly config: ConfigService,
     private readonly rls: RlsQueryService,
+    private readonly whatsappClient: WhatsAppClientService,
   ) {}
 
   verifyToken(mode: string | undefined, token: string | undefined): boolean {
@@ -57,6 +67,7 @@ export class WhatsAppService {
             body: message.text?.body ?? `[${message.type}]`,
             waMessageId: message.id,
           });
+          await this.sendAutoReply(message.from);
         }
       }
     }
@@ -87,5 +98,34 @@ export class WhatsAppService {
         );
       }
     });
+  }
+
+  /**
+   * Envía el mensaje canned y lo deja registrado en `messages` como
+   * cualquier otro saliente (mismo patrón que MessagesService.send),
+   * para que aparezca en el log de /messages. Si Meta rechaza el envío
+   * no tumba el webhook — solo se loguea, Meta ya recibió su 200 por el
+   * mensaje entrante.
+   */
+  private async sendAutoReply(to: string): Promise<void> {
+    try {
+      const { waMessageId } = await this.whatsappClient.sendText(to, AUTO_REPLY_BODY);
+      await this.rls.asSystem(async (client) => {
+        const { rows: contactRows } = await client.query(
+          `select tenant_id from public.contacts where phone_number = $1`,
+          [normalizePhone(to)],
+        );
+        const tenantId = contactRows[0]?.tenant_id ?? null;
+        await client.query(
+          `insert into public.messages (tenant_id, direction, wa_from, wa_to, body, wa_message_id)
+           values ($1, 'outbound', 'crm', $2, $3, $4)`,
+          [tenantId, to, AUTO_REPLY_BODY, waMessageId],
+        );
+      });
+    } catch (err) {
+      this.logger.error(
+        `No se pudo enviar la respuesta automática a ${to}: ${(err as Error).message}`,
+      );
+    }
   }
 }

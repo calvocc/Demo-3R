@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
-import { PropertyTable, Property } from "@/components/properties/property-table";
+import { PropertyList, Property } from "@/components/properties/property-list";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { IconExternalLink, IconPlus } from "@/components/ui/icons";
 
 export default function PropertiesPage() {
   const { session, profile } = useAuth();
@@ -13,7 +15,7 @@ export default function PropertiesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canWrite = profile?.role === "owner" || profile?.role === "agente";
+  const canWrite = profile?.role === "owner" || profile?.role === "agente" || profile?.role === "broker";
   const accessToken = session?.access_token;
 
   async function load() {
@@ -53,20 +55,36 @@ export default function PropertiesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Propiedades</h1>
-        {canWrite && (
-          <Link href="/properties/new">
-            <Button>Agregar propiedad</Button>
-          </Link>
-        )}
-      </div>
+    <div>
+      <PageHeader
+        title="Propiedades"
+        description={`${properties.length} propiedad${properties.length === 1 ? "" : "es"} en tu inventario`}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {profile?.tenantId && (
+              <Link href={`/inmobiliaria/${profile.tenantId}`} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline">
+                  <IconExternalLink className="h-4 w-4" />
+                  Ver página pública
+                </Button>
+              </Link>
+            )}
+            {canWrite && (
+              <Link href="/properties/new">
+                <Button>
+                  <IconPlus className="h-4 w-4" />
+                  Agregar propiedad
+                </Button>
+              </Link>
+            )}
+          </div>
+        }
+      />
 
       {loading && <p className="text-sm text-muted-foreground">Cargando…</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
       {!loading && !error && (
-        <PropertyTable
+        <PropertyList
           properties={properties}
           canWrite={canWrite}
           onDelete={handleDelete}

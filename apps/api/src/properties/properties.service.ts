@@ -25,6 +25,42 @@ export class PropertiesService {
     });
   }
 
+  // Página pública (sin login) de un tenant: RLS con el rol `anon` ya
+  // limita esto a filas `status = 'activa'` y a las columnas otorgadas
+  // en la migración 0003 — el `where tenant_id = $1` de acá es solo
+  // para no mostrar propiedades de otras inmobiliarias en esta página,
+  // no es la barrera de seguridad (esa es la policy de RLS).
+  listPublic(tenantId: string) {
+    return this.rls.asAnon(async (client) => {
+      const { rows } = await client.query(
+        `select id, tenant_id, title, description, price, zone, type, created_at
+         from public.properties
+         where tenant_id = $1
+         order by created_at desc`,
+        [tenantId],
+      );
+      return rows;
+    });
+  }
+
+  // Página pública "marketplace" (sin tenantId en la URL): todas las
+  // propiedades activas de todas las inmobiliarias de la plataforma.
+  // Sigue sin filtrar por tenant a propósito — join con `tenants` solo
+  // para mostrar de qué inmobiliaria es cada una. RLS del rol `anon`
+  // es la que de verdad limita esto a status = 'activa'.
+  listAllPublic() {
+    return this.rls.asAnon(async (client) => {
+      const { rows } = await client.query(
+        `select p.id, p.tenant_id, t.name as tenant_name, p.title, p.description,
+                p.price, p.zone, p.type, p.created_at
+         from public.properties p
+         join public.tenants t on t.id = p.tenant_id
+         order by p.created_at desc`,
+      );
+      return rows;
+    });
+  }
+
   async findOne(userId: string, id: string) {
     const row = await this.rls.withUserContext(userId, async (client) => {
       const { rows } = await client.query(

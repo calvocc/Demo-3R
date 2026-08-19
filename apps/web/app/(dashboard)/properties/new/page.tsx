@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { PropertyForm, PropertyFormValues } from "@/components/properties/property-form";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function NewPropertyPage() {
   const { session, profile } = useAuth();
@@ -24,8 +25,8 @@ export default function NewPropertyPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Agregar propiedad</h1>
+    <div>
+      <PageHeader title="Agregar propiedad" description="Completa los datos para publicarla en tu inventario." />
       <PropertyForm submitLabel="Crear propiedad" onSubmit={handleSubmit} />
     </div>
   );

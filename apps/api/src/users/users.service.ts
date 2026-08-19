@@ -57,9 +57,9 @@ export class UsersService {
 
     await this.rls.withUserContext(ownerUserId, async (client) => {
       await client.query(
-        `insert into public.profiles (id, tenant_id, role, full_name, email)
-         values ($1, $2, $3, $4, $5)`,
-        [data.user!.id, profile.tenantId, dto.role, dto.fullName, dto.email],
+        `insert into public.profiles (id, tenant_id, role, full_name, email, phone)
+         values ($1, $2, $3, $4, $5, $6)`,
+        [data.user!.id, profile.tenantId, dto.role, dto.fullName, dto.email, dto.phone],
       );
     });
 
@@ -68,6 +68,7 @@ export class UsersService {
       email: dto.email,
       fullName: dto.fullName,
       role: dto.role,
+      phone: dto.phone,
       tempPassword,
     };
   }

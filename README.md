@@ -32,6 +32,7 @@ nada por `tenant_id` a mano. El detalle completo está comentado en
 1. En **SQL Editor** de tu proyecto de Supabase, corre en orden:
    - `supabase/migrations/0001_init_schema.sql`
    - `supabase/migrations/0002_rls_policies.sql`
+   - `supabase/migrations/0003_public_properties.sql`
 2. En **Authentication → Providers → Email**, desactiva "Confirm email"
    (para que el registro de una inmobiliaria nueva no dependa de un correo
    de confirmación durante la demo).
@@ -127,8 +128,27 @@ Requiere la URL de Railway ya desplegada (Meta exige HTTPS público).
 
 ## Estructura de roles
 
-- **owner** — el primer usuario de una inmobiliaria. CRUD completo de
-  propiedades, invita agentes/clientes.
-- **agente** — CRUD completo de propiedades, ve mensajes, no invita gente.
-- **cliente** — solo lectura de propiedades, sin acceso a `/messages` ni
-  `/agents` (ni en la UI ni a nivel de RLS en la base de datos).
+- **owner** — el primer usuario de una inmobiliaria (la cuenta
+  representa a la inmobiliaria misma). CRUD completo de propiedades,
+  invita agentes/brokers, único rol con acceso a `/agents`.
+- **agente** / **broker** — mismos permisos: CRUD completo de
+  propiedades, ven mensajes, no invitan gente ni ven `/agents`. Es una
+  distinción de título nada más. Se invitan desde `/agents` con
+  nombre, correo y teléfono (indicativo + número) — ese teléfono es al
+  que el bot los contacta cuando un cliente pregunta por una de sus
+  propiedades.
+- **cliente** — rol heredado, ya no se invita desde `/agents` (los
+  clientes ahora navegan la página pública sin login, ver más abajo).
+  Las cuentas `cliente` existentes conservan solo lectura de
+  propiedades, sin acceso a `/messages` ni `/agents` (ni en la UI ni a
+  nivel de RLS en la base de datos).
+
+## Página pública de propiedades
+
+Cada inmobiliaria tiene una página pública en `/inmobiliaria/:tenantId`
+(botón "Ver página pública" en `/properties`) con las propiedades
+`activa` del tenant, sin necesidad de login — pensada para compartirla
+con clientes. El aislamiento sigue siendo RLS: el rol `anon` de Postgres
+solo puede leer filas con `status = 'activa'` y un subconjunto de
+columnas (ver `supabase/migrations/0003_public_properties.sql` y
+`RlsQueryService.asAnon`), no un bypass en el código de la API.

@@ -5,16 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { InviteAgentForm } from "@/components/agents/invite-agent-form";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-
-interface TeamMember {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  role: "owner" | "agente" | "cliente";
-  created_at: string;
-}
+import { TeamList, TeamMember } from "@/components/agents/team-list";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function AgentsPage() {
   const { session, profile } = useAuth();
@@ -38,7 +30,7 @@ export default function AgentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.access_token]);
 
-  async function handleInvite(values: { email: string; fullName: string; role: "agente" | "cliente" }) {
+  async function handleInvite(values: { email: string; fullName: string; role: "agente" | "broker"; phone: string }) {
     const result = await apiFetch<{ tempPassword: string }>("/users/invite", session!.access_token, {
       method: "POST",
       body: values,
@@ -49,39 +41,22 @@ export default function AgentsPage() {
 
   if (profile && profile.role !== "owner") return null;
 
+  // Esta pantalla lista solo personal de la inmobiliaria (agente y
+  // broker). El registro del owner es la cuenta de la inmobiliaria
+  // misma (se crea sin datos de una persona — ver register_tenant en
+  // la migración 0002), no un colega a gestionar, así que no aparece
+  // acá; los clientes ya no se invitan desde aquí (navegan la página
+  // pública sin login).
+  const team = members.filter((m) => m.role === "agente" || m.role === "broker");
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Agentes de tu inmobiliaria</h1>
-        <p className="text-sm text-muted-foreground">
-          Invita a tus brokers (rol agente) o da acceso de solo lectura a un cliente.
-        </p>
-      </div>
+      <PageHeader
+        title="Agentes de tu inmobiliaria"
+        description="Invita a tus agentes o brokers y registra el WhatsApp al que el bot los va a contactar."
+      />
 
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Cargando…</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Correo</TableHead>
-              <TableHead>Rol</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell>{m.full_name ?? "—"}</TableCell>
-                <TableCell>{m.email}</TableCell>
-                <TableCell>
-                  <Badge>{m.role}</Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+      {loading ? <p className="text-sm text-muted-foreground">Cargando…</p> : <TeamList members={team} />}
 
       <div>
         <h2 className="mb-4 text-lg font-medium">Invitar a alguien nuevo</h2>

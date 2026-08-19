@@ -56,9 +56,12 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-secondary via-background to-accent p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
+          <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
+            3R
+          </div>
           <CardTitle>Registra tu inmobiliaria</CardTitle>
           <p className="text-sm text-muted-foreground">
             Serás el owner de la cuenta y podrás invitar agentes después.

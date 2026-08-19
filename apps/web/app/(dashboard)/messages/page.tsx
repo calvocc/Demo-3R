@@ -4,17 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-
-interface Message {
-  id: string;
-  direction: "inbound" | "outbound";
-  wa_from: string;
-  wa_to: string;
-  body: string | null;
-  created_at: string;
-}
+import { MessageList, Message } from "@/components/messages/message-list";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function MessagesPage() {
   const { session, profile } = useAuth();
@@ -36,46 +27,15 @@ export default function MessagesPage() {
   }, [session?.access_token]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Mensajes de WhatsApp</h1>
-        <p className="text-sm text-muted-foreground">
-          Log crudo de mensajes entrantes/salientes — prueba de que el flujo de datos funciona
-          de extremo a extremo.
-        </p>
-      </div>
+    <div>
+      <PageHeader
+        title="Mensajes de WhatsApp"
+        description="Log de mensajes entrantes/salientes — prueba de que el flujo de datos funciona de extremo a extremo."
+      />
 
       {loading && <p className="text-sm text-muted-foreground">Cargando…</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {!loading && !error && messages.length === 0 && (
-        <p className="text-sm text-muted-foreground">Todavía no hay mensajes.</p>
-      )}
-      {!loading && !error && messages.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Dirección</TableHead>
-              <TableHead>De</TableHead>
-              <TableHead>Para</TableHead>
-              <TableHead>Mensaje</TableHead>
-              <TableHead>Fecha</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {messages.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell>
-                  <Badge>{m.direction === "inbound" ? "Entrante" : "Saliente"}</Badge>
-                </TableCell>
-                <TableCell>{m.wa_from}</TableCell>
-                <TableCell>{m.wa_to}</TableCell>
-                <TableCell className="max-w-md whitespace-pre-wrap">{m.body}</TableCell>
-                <TableCell>{new Date(m.created_at).toLocaleString("es-CO")}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+      {!loading && !error && <MessageList messages={messages} />}
     </div>
   );
 }

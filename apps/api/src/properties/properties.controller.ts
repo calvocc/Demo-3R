@@ -39,7 +39,7 @@ export class PropertiesController {
   // para dar un 403 claro — la barrera real es la policy de RLS en
   // `properties`, que rechazaría igual el INSERT/UPDATE/DELETE.
   @UseGuards(RolesGuard)
-  @Roles("owner", "agente")
+  @Roles("owner", "agente", "broker")
   @Post()
   create(
     @CurrentUser() user: RequestUser,
@@ -50,7 +50,7 @@ export class PropertiesController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles("owner", "agente")
+  @Roles("owner", "agente", "broker")
   @Put(":id")
   update(
     @CurrentUser() user: RequestUser,
@@ -61,7 +61,7 @@ export class PropertiesController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles("owner", "agente")
+  @Roles("owner", "agente", "broker")
   @Delete(":id")
   remove(@CurrentUser() user: RequestUser, @Param("id") id: string) {
     return this.propertiesService.remove(user.id, id);

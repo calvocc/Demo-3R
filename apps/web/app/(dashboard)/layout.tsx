@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { AppNav } from "@/components/nav/app-nav";
+import { Sidebar, MobileTopbar } from "@/components/nav/app-nav";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { session, profile, loading } = useAuth();
@@ -16,13 +16,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [loading, session, profile, router]);
 
   if (loading || !session || !profile) {
-    return <p className="p-6 text-sm text-muted-foreground">Cargando…</p>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Cargando…</p>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen">
-      <AppNav />
-      <main className="mx-auto max-w-5xl p-6">{children}</main>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar />
+      <div className="flex min-h-screen flex-1 flex-col">
+        <MobileTopbar />
+        <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
     </div>
   );
 }

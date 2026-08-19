@@ -13,7 +13,7 @@ import { SendMessageDto } from "./dto/send-message.dto";
 // claro en vez de dejar que la consulta simplemente vuelva vacía.
 @Controller("messages")
 @UseGuards(SupabaseAuthGuard, ProfileGuard, RolesGuard)
-@Roles("owner", "agente")
+@Roles("owner", "agente", "broker")
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
