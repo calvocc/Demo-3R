@@ -1,11 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
+import {
+  IconBuilding,
+  IconMessage,
+  IconUsers,
+  IconLogout,
+  IconMenu,
+  IconClose,
+} from "@/components/ui/icons";
 
 const roleLabels: Record<string, string> = {
   owner: "Owner",
@@ -13,18 +21,60 @@ const roleLabels: Record<string, string> = {
   cliente: "Cliente",
 };
 
-export function AppNav() {
-  const { profile, signOut } = useAuth();
-  const pathname = usePathname();
-  const router = useRouter();
-
-  if (!profile) return null;
-
-  const links = [
-    { href: "/properties", label: "Propiedades", show: true },
-    { href: "/messages", label: "Mensajes (WhatsApp)", show: profile.role !== "cliente" },
-    { href: "/agents", label: "Agentes", show: profile.role === "owner" },
+function useNavLinks() {
+  const { profile } = useAuth();
+  return [
+    { href: "/properties", label: "Propiedades", icon: IconBuilding, show: true },
+    { href: "/messages", label: "Mensajes", icon: IconMessage, show: profile?.role !== "cliente" },
+    { href: "/agents", label: "Agentes", icon: IconUsers, show: profile?.role === "owner" },
   ].filter((l) => l.show);
+}
+
+function Brand() {
+  return (
+    <div className="flex items-center gap-2 px-1">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
+        3R
+      </div>
+      <span className="text-sm font-semibold text-sidebar-foreground">3R Connect CRM</span>
+    </div>
+  );
+}
+
+function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const links = useNavLinks();
+  const pathname = usePathname();
+
+  return (
+    <nav className="flex flex-1 flex-col gap-1">
+      {links.map((link) => {
+        const active = pathname?.startsWith(link.href);
+        const Icon = link.icon;
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            onClick={onNavigate}
+            className={clsx(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              active
+                ? "bg-sidebar-accent text-white"
+                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-white",
+            )}
+          >
+            <Icon className="h-[18px] w-[18px] shrink-0" />
+            {link.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function ProfileFooter() {
+  const { profile, signOut } = useAuth();
+  const router = useRouter();
+  if (!profile) return null;
 
   async function handleSignOut() {
     await signOut();
@@ -32,28 +82,88 @@ export function AppNav() {
   }
 
   return (
-    <nav className="flex items-center justify-between border-b border-border px-6 py-3">
-      <div className="flex items-center gap-6">
-        <span className="font-semibold">3R Connect CRM</span>
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={clsx(
-              "text-sm",
-              pathname?.startsWith(link.href) ? "font-medium text-primary" : "text-muted-foreground",
-            )}
-          >
-            {link.label}
-          </Link>
-        ))}
+    <div className="flex items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-2">
+      <Avatar name={roleLabels[profile.role] ?? profile.role} size="sm" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium text-sidebar-foreground">
+          {roleLabels[profile.role] ?? profile.role}
+        </p>
+        <p className="truncate text-[11px] text-sidebar-foreground/60">Sesión activa</p>
       </div>
-      <div className="flex items-center gap-3">
-        <Badge>{roleLabels[profile.role] ?? profile.role}</Badge>
-        <Button variant="outline" onClick={handleSignOut}>
-          Salir
-        </Button>
+      <button
+        onClick={handleSignOut}
+        aria-label="Cerrar sesión"
+        title="Cerrar sesión"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-white"
+      >
+        <IconLogout className="h-[18px] w-[18px]" />
+      </button>
+    </div>
+  );
+}
+
+/** Sidebar fija para escritorio (≥ md). */
+export function Sidebar() {
+  const { profile } = useAuth();
+  if (!profile) return null;
+
+  return (
+    <aside className="hidden w-64 shrink-0 flex-col gap-6 bg-sidebar p-4 md:flex">
+      <Brand />
+      <NavLinks />
+      <ProfileFooter />
+    </aside>
+  );
+}
+
+/** Topbar + drawer deslizable para móvil (< md). */
+export function MobileTopbar() {
+  const { profile } = useAuth();
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => setOpen(false), [pathname]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("drawer-open", open);
+    return () => document.documentElement.classList.remove("drawer-open");
+  }, [open]);
+
+  if (!profile) return null;
+
+  return (
+    <div className="md:hidden">
+      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-sidebar px-4 py-3">
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Abrir menú"
+          className="flex h-9 w-9 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent"
+        >
+          <IconMenu />
+        </button>
+        <Brand />
+        <Avatar name={roleLabels[profile.role] ?? profile.role} size="sm" />
       </div>
-    </nav>
+
+      {open && (
+        <div className="fixed inset-0 z-40 animate-fade-in">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="relative flex h-full w-72 max-w-[80vw] animate-slide-in flex-col gap-6 bg-sidebar p-4 shadow-popover">
+            <div className="flex items-center justify-between">
+              <Brand />
+              <button
+                onClick={() => setOpen(false)}
+                aria-label="Cerrar menú"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent"
+              >
+                <IconClose />
+              </button>
+            </div>
+            <NavLinks onNavigate={() => setOpen(false)} />
+            <ProfileFooter />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

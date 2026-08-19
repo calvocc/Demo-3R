@@ -5,16 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { InviteAgentForm } from "@/components/agents/invite-agent-form";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-
-interface TeamMember {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  role: "owner" | "agente" | "cliente";
-  created_at: string;
-}
+import { TeamList, TeamMember } from "@/components/agents/team-list";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function AgentsPage() {
   const { session, profile } = useAuth();
@@ -51,37 +43,12 @@ export default function AgentsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Agentes de tu inmobiliaria</h1>
-        <p className="text-sm text-muted-foreground">
-          Invita a tus brokers (rol agente) o da acceso de solo lectura a un cliente.
-        </p>
-      </div>
+      <PageHeader
+        title="Agentes de tu inmobiliaria"
+        description="Invita a tus brokers (rol agente) o da acceso de solo lectura a un cliente."
+      />
 
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Cargando…</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Correo</TableHead>
-              <TableHead>Rol</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell>{m.full_name ?? "—"}</TableCell>
-                <TableCell>{m.email}</TableCell>
-                <TableCell>
-                  <Badge>{m.role}</Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+      {loading ? <p className="text-sm text-muted-foreground">Cargando…</p> : <TeamList members={members} />}
 
       <div>
         <h2 className="mb-4 text-lg font-medium">Invitar a alguien nuevo</h2>

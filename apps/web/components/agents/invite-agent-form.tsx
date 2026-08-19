@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Props {
   onInvite: (values: { email: string; fullName: string; role: "agente" | "cliente" }) => Promise<{
@@ -37,38 +39,39 @@ export function InviteAgentForm({ onInvite }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md space-y-4">
-      <div>
-        <Label htmlFor="fullName">Nombre completo</Label>
-        <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-      </div>
-      <div>
-        <Label htmlFor="email">Correo</Label>
-        <Input
-          id="email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-      <div>
-        <Label htmlFor="role">Rol</Label>
-        <select
-          id="role"
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          value={role}
-          onChange={(e) => setRole(e.target.value as "agente" | "cliente")}
-        >
-          <option value="agente">Agente / broker</option>
-          <option value="cliente">Cliente (solo lectura)</option>
-        </select>
-      </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {result && <p className="text-sm text-primary">{result}</p>}
-      <Button type="submit" disabled={loading}>
-        {loading ? "Invitando…" : "Invitar"}
-      </Button>
-    </form>
+    <Card className="max-w-2xl">
+      <CardContent className="p-4 sm:p-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="fullName">Nombre completo</Label>
+              <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="email">Correo</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="sm:col-span-2 sm:max-w-xs">
+              <Label htmlFor="role">Rol</Label>
+              <Select id="role" value={role} onChange={(e) => setRole(e.target.value as "agente" | "cliente")}>
+                <option value="agente">Agente / broker</option>
+                <option value="cliente">Cliente (solo lectura)</option>
+              </Select>
+            </div>
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {result && <p className="text-sm text-primary">{result}</p>}
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+            {loading ? "Invitando…" : "Invitar"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

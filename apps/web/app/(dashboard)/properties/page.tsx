@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
-import { PropertyTable, Property } from "@/components/properties/property-table";
+import { PropertyList, Property } from "@/components/properties/property-list";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { IconPlus } from "@/components/ui/icons";
 
 export default function PropertiesPage() {
   const { session, profile } = useAuth();
@@ -53,20 +55,26 @@ export default function PropertiesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Propiedades</h1>
-        {canWrite && (
-          <Link href="/properties/new">
-            <Button>Agregar propiedad</Button>
-          </Link>
-        )}
-      </div>
+    <div>
+      <PageHeader
+        title="Propiedades"
+        description={`${properties.length} propiedad${properties.length === 1 ? "" : "es"} en tu inventario`}
+        action={
+          canWrite && (
+            <Link href="/properties/new">
+              <Button>
+                <IconPlus className="h-4 w-4" />
+                Agregar propiedad
+              </Button>
+            </Link>
+          )
+        }
+      />
 
       {loading && <p className="text-sm text-muted-foreground">Cargando…</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
       {!loading && !error && (
-        <PropertyTable
+        <PropertyList
           properties={properties}
           canWrite={canWrite}
           onDelete={handleDelete}

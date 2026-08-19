@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api";
 import { PropertyForm, PropertyFormValues } from "@/components/properties/property-form";
-import { Property } from "@/components/properties/property-table";
+import { Property } from "@/components/properties/property-list";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default function EditPropertyPage() {
   const { id } = useParams<{ id: string }>();
@@ -38,8 +39,8 @@ export default function EditPropertyPage() {
   if (!property) return <p className="text-sm text-muted-foreground">Cargando…</p>;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Editar propiedad</h1>
+    <div>
+      <PageHeader title="Editar propiedad" />
       <PropertyForm
         submitLabel="Guardar cambios"
         initialValues={{
