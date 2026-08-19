@@ -1,6 +1,16 @@
+"use client";
+
+import { useState } from "react";
+import clsx from "clsx";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IconArrowDownLeft, IconArrowUpRight, IconBuilding, IconInbox } from "@/components/ui/icons";
+import {
+  IconArrowDownLeft,
+  IconArrowUpRight,
+  IconBuilding,
+  IconChevronRight,
+  IconInbox,
+} from "@/components/ui/icons";
 
 export interface Message {
   id: string;
@@ -87,6 +97,8 @@ function groupConversations(messages: Message[]): Conversation[] {
 }
 
 export function MessageList({ messages }: { messages: Message[] }) {
+  const [openKeys, setOpenKeys] = useState<Set<string>>(new Set());
+
   if (messages.length === 0) {
     return (
       <EmptyState
@@ -99,52 +111,90 @@ export function MessageList({ messages }: { messages: Message[] }) {
 
   const conversations = groupConversations(messages);
 
+  function toggle(key: string) {
+    setOpenKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   return (
     <div className="space-y-4">
-      {conversations.map((conv) => (
-        <div key={conv.key} className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-secondary/40 px-4 py-2.5">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{conv.clientName}</p>
-              {conv.clientName !== conv.phone && (
-                <p className="truncate text-xs text-muted-foreground">{conv.phone}</p>
-              )}
-            </div>
-            <Badge variant="outline" className="shrink-0">
-              <IconBuilding className="h-3 w-3" />
-              {conv.propertyTitle ?? "Sin propiedad asociada"}
-            </Badge>
-          </div>
+      {conversations.map((conv) => {
+        const isOpen = openKeys.has(conv.key);
+        const lastMessage = conv.messages[conv.messages.length - 1];
 
-          {conv.messages.map((m, i) => {
-            const inbound = m.direction === "inbound";
-            return (
-              <div
-                key={m.id}
-                className={"flex items-start gap-3 px-4 py-3" + (i !== 0 ? " border-t border-border" : "")}
-              >
-                <div
-                  className={
-                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full " +
-                    (inbound ? "bg-success-subtle text-success" : "bg-accent text-accent-foreground")
-                  }
-                >
-                  {inbound ? <IconArrowDownLeft className="h-4 w-4" /> : <IconArrowUpRight className="h-4 w-4" />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Badge variant={inbound ? "success" : "primary"}>
-                    {inbound ? "Entrante" : "Saliente"}
-                  </Badge>
-                  <p className="mt-1.5 whitespace-pre-wrap break-words text-sm">{m.body}</p>
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    {new Date(m.created_at).toLocaleString("es-CO")}
-                  </p>
+        return (
+          <div key={conv.key} className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+            <button
+              type="button"
+              onClick={() => toggle(conv.key)}
+              aria-expanded={isOpen}
+              className="flex w-full flex-wrap items-center justify-between gap-2 bg-secondary/40 px-4 py-2.5 text-left transition-colors hover:bg-secondary/70"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <IconChevronRight
+                  className={clsx("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-90")}
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{conv.clientName}</p>
+                  {conv.clientName !== conv.phone && (
+                    <p className="truncate text-xs text-muted-foreground">{conv.phone}</p>
+                  )}
+                  {!isOpen && lastMessage?.body && (
+                    <p className="mt-0.5 line-clamp-1 max-w-xs text-xs text-muted-foreground">
+                      {lastMessage.body}
+                    </p>
+                  )}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      ))}
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {conv.messages.length} mensaje{conv.messages.length === 1 ? "" : "s"}
+                </span>
+                <Badge variant="outline">
+                  <IconBuilding className="h-3 w-3" />
+                  {conv.propertyTitle ?? "Sin propiedad asociada"}
+                </Badge>
+              </div>
+            </button>
+
+            {isOpen && (
+              <div>
+                {conv.messages.map((m, i) => {
+                  const inbound = m.direction === "inbound";
+                  return (
+                    <div
+                      key={m.id}
+                      className={"flex items-start gap-3 border-t border-border px-4 py-3"}
+                    >
+                      <div
+                        className={
+                          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full " +
+                          (inbound ? "bg-success-subtle text-success" : "bg-accent text-accent-foreground")
+                        }
+                      >
+                        {inbound ? <IconArrowDownLeft className="h-4 w-4" /> : <IconArrowUpRight className="h-4 w-4" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <Badge variant={inbound ? "success" : "primary"}>
+                          {inbound ? "Entrante" : "Saliente"}
+                        </Badge>
+                        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm">{m.body}</p>
+                        <p className="mt-1.5 text-xs text-muted-foreground">
+                          {new Date(m.created_at).toLocaleString("es-CO")}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
