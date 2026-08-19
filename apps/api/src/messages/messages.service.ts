@@ -52,30 +52,20 @@ export class MessagesService {
       // recibe los números así (sin "+") — sin esto, un mensaje que
       // responde el cliente nunca hace match contra este contacto.
       //
-      // UPDATE primero, INSERT como respaldo — a propósito, en vez de
-      // `insert ... on conflict do update`. Postgres exige que la fila
-      // en conflicto sea visible bajo la policy de SELECT de la tabla
-      // para poder resolver el conflicto, y `contacts_select_tenant`
-      // sigue (correctamente) restringida por tenant — así que un
-      // upsert nunca puede "reclamar" el contacto de otro tenant, por
-      // más que la policy de UPDATE sí lo permita. Un UPDATE simple no
-      // tiene esa dependencia de la policy de SELECT, solo de la de
-      // UPDATE (`contacts_update_tenant`), que es la que de verdad
-      // decide si se puede reclamar.
-      const normalizedPhone = normalizePhone(dto.to);
-      const { rowCount } = await client.query(
-        `update public.contacts
-         set tenant_id = $2, last_agent_profile_id = $3, updated_at = now()
-         where phone_number = $1`,
-        [normalizedPhone, tenantId, userId],
-      );
-      if (rowCount === 0) {
-        await client.query(
-          `insert into public.contacts (phone_number, tenant_id, last_agent_profile_id)
-           values ($1, $2, $3)`,
-          [normalizedPhone, tenantId, userId],
-        );
-      }
+      // Vía la función `claim_contact` (SECURITY DEFINER), no un
+      // INSERT/UPDATE directo: Postgres combina, para UPDATE, tanto la
+      // policy de UPDATE como la de SELECT de la tabla para decidir qué
+      // filas son visibles — y `contacts_select_tenant` sigue (a
+      // propósito) restringida por tenant, así que ni un UPDATE simple
+      // ni un upsert pueden "ver" el contacto de otro tenant para
+      // reclamarlo. La función bypassea RLS internamente pero repite a
+      // mano las mismas validaciones (rol + que solo reclame para su
+      // propio tenant) — ver 0006_claim_contact_function.sql.
+      await client.query(`select public.claim_contact($1, $2, $3)`, [
+        normalizePhone(dto.to),
+        tenantId,
+        userId,
+      ]);
 
       const { rows } = await client.query(
         `insert into public.messages
