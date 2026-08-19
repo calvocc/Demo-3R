@@ -95,7 +95,11 @@ export default function PublicPropertiesPage() {
       </header>
 
       {/* Filtros */}
-      <div className="mx-auto -mt-10 max-w-5xl px-4 sm:px-6">
+      {/* relative z-10: el header es `position: relative` (por el degradado
+          decorativo absoluto), así que sin esto el navegador lo pinta
+          después de este bloque no-posicionado y lo tapa donde se
+          superponen (-mt-10). */}
+      <div className="relative z-10 mx-auto -mt-10 max-w-5xl px-4 sm:px-6">
         <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-popover sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
