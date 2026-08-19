@@ -28,38 +28,56 @@ function normalizePhone(phone: string): string {
 }
 
 /**
- * Agrupa el log plano de mensajes en una conversación por cliente —
- * ver todos los mensajes de todos los clientes uno tras otro (como
- * antes) era confuso porque mezclaba distintas propiedades y personas
- * en una sola lista. El "cliente" de una fila es el número que NO es
- * el nuestro: `wa_to` si el mensaje es saliente, `wa_from` si es
- * entrante. La agrupación es por número normalizado (sin "+"/espacios)
- * porque un mensaje saliente lo guarda con "+" y uno entrante sin él.
+ * Agrupa el log plano de mensajes en conversaciones por (cliente,
+ * propiedad) — no solo por cliente. El mismo número puede escribir
+ * sobre dos propiedades distintas, y eso debe verse como dos hilos
+ * separados, no uno solo donde la propiedad más reciente pisa a la
+ * anterior.
+ *
+ * El truco: solo los mensajes SALIENTES traen `related_property_id`
+ * (Meta no manda eso en el entrante, así que una respuesta del
+ * cliente nunca lo trae). Por eso cada respuesta "hereda" la última
+ * propiedad que un agente le envió a ESE número antes de esa
+ * respuesta — se recorre en orden cronológico manteniendo, por
+ * cliente, cuál es la propiedad "activa" en cada momento.
  */
-function groupByClient(messages: Message[]): Conversation[] {
-  const groups = new Map<string, Conversation>();
+function groupConversations(messages: Message[]): Conversation[] {
+  const activePropertyByClient = new Map<string, { id: string; title: string | null }>();
 
-  for (const m of messages) {
+  const tagged = messages.map((m) => {
     const rawPhone = m.direction === "outbound" ? m.wa_to : m.wa_from;
-    const key = normalizePhone(rawPhone);
+    const clientKey = normalizePhone(rawPhone);
 
-    let group = groups.get(key);
+    if (m.direction === "outbound" && m.related_property_id) {
+      activePropertyByClient.set(clientKey, { id: m.related_property_id, title: m.property_title });
+    }
+    const active = activePropertyByClient.get(clientKey);
+
+    return {
+      message: m,
+      rawPhone,
+      groupKey: `${clientKey}::${active?.id ?? "none"}`,
+      propertyTitle: active?.title ?? null,
+    };
+  });
+
+  const groups = new Map<string, Conversation>();
+  for (const t of tagged) {
+    let group = groups.get(t.groupKey);
     if (!group) {
       group = {
-        key,
-        phone: rawPhone,
-        clientName: rawPhone,
-        propertyTitle: null,
+        key: t.groupKey,
+        phone: t.rawPhone,
+        clientName: t.rawPhone,
+        propertyTitle: t.propertyTitle,
         messages: [],
-        lastActivity: m.created_at,
+        lastActivity: t.message.created_at,
       };
-      groups.set(key, group);
+      groups.set(t.groupKey, group);
     }
-
-    group.messages.push(m);
-    group.lastActivity = m.created_at; // los mensajes llegan en orden asc, así que el último gana
-    if (m.wa_contact_name) group.clientName = m.wa_contact_name;
-    if (m.property_title) group.propertyTitle = m.property_title;
+    group.messages.push(t.message);
+    group.lastActivity = t.message.created_at; // los mensajes llegan en orden asc, el último gana
+    if (t.message.wa_contact_name) group.clientName = t.message.wa_contact_name;
   }
 
   // Conversación con actividad más reciente primero.
@@ -79,7 +97,7 @@ export function MessageList({ messages }: { messages: Message[] }) {
     );
   }
 
-  const conversations = groupByClient(messages);
+  const conversations = groupConversations(messages);
 
   return (
     <div className="space-y-4">
