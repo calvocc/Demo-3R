@@ -41,10 +41,13 @@ export default function AgentsPage() {
 
   if (profile && profile.role !== "owner") return null;
 
-  // Esta pantalla es el directorio del equipo (owner + agentes) — los
-  // clientes se invitan y gestionan igual (ver InviteAgentForm), pero
-  // no se listan acá para no mezclarlos con el equipo de trabajo.
-  const team = members.filter((m) => m.role !== "cliente");
+  // Esta pantalla lista solo agentes. El registro del owner es la
+  // cuenta de la inmobiliaria misma (se crea sin datos de una persona
+  // — ver register_tenant en la migración 0002), no un colega a
+  // gestionar, así que no aparece acá; los clientes tampoco (se
+  // invitan igual, ver InviteAgentForm, pero se ocultan de este
+  // directorio de equipo).
+  const team = members.filter((m) => m.role === "agente");
 
   return (
     <div className="space-y-8">
