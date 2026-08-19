@@ -3,12 +3,8 @@
  * recibe los mensajes de todas las inmobiliarias (ver
  * apps/api WHATSAPP_PHONE_NUMBER_ID). Formato internacional, solo
  * dígitos (sin "+", espacios ni guiones), como lo pide wa.me.
- *
- * TODO: reemplazar por el número real del bot antes de usar el botón
- * "Contactar" en producción — con este placeholder wa.me no abre un
- * chat válido.
  */
-export const PLATFORM_WHATSAPP_NUMBER = "";
+export const PLATFORM_WHATSAPP_NUMBER = "15551850763";
 
 interface ContactableProperty {
   title: string;
