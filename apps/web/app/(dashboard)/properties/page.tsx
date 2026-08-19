@@ -7,7 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { PropertyList, Property } from "@/components/properties/property-list";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { IconPlus } from "@/components/ui/icons";
+import { IconExternalLink, IconPlus } from "@/components/ui/icons";
 
 export default function PropertiesPage() {
   const { session, profile } = useAuth();
@@ -60,14 +60,24 @@ export default function PropertiesPage() {
         title="Propiedades"
         description={`${properties.length} propiedad${properties.length === 1 ? "" : "es"} en tu inventario`}
         action={
-          canWrite && (
-            <Link href="/properties/new">
-              <Button>
-                <IconPlus className="h-4 w-4" />
-                Agregar propiedad
-              </Button>
-            </Link>
-          )
+          <div className="flex flex-wrap items-center gap-2">
+            {profile?.tenantId && (
+              <Link href={`/inmobiliaria/${profile.tenantId}`} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline">
+                  <IconExternalLink className="h-4 w-4" />
+                  Ver página pública
+                </Button>
+              </Link>
+            )}
+            {canWrite && (
+              <Link href="/properties/new">
+                <Button>
+                  <IconPlus className="h-4 w-4" />
+                  Agregar propiedad
+                </Button>
+              </Link>
+            )}
+          </div>
         }
       />
 

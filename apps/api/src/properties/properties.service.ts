@@ -25,6 +25,24 @@ export class PropertiesService {
     });
   }
 
+  // Página pública (sin login) de un tenant: RLS con el rol `anon` ya
+  // limita esto a filas `status = 'activa'` y a las columnas otorgadas
+  // en la migración 0003 — el `where tenant_id = $1` de acá es solo
+  // para no mostrar propiedades de otras inmobiliarias en esta página,
+  // no es la barrera de seguridad (esa es la policy de RLS).
+  listPublic(tenantId: string) {
+    return this.rls.asAnon(async (client) => {
+      const { rows } = await client.query(
+        `select id, tenant_id, title, description, price, zone, type, created_at
+         from public.properties
+         where tenant_id = $1
+         order by created_at desc`,
+        [tenantId],
+      );
+      return rows;
+    });
+  }
+
   async findOne(userId: string, id: string) {
     const row = await this.rls.withUserContext(userId, async (client) => {
       const { rows } = await client.query(

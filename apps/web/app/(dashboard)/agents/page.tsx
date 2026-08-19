@@ -41,6 +41,11 @@ export default function AgentsPage() {
 
   if (profile && profile.role !== "owner") return null;
 
+  // Esta pantalla es el directorio del equipo (owner + agentes) — los
+  // clientes se invitan y gestionan igual (ver InviteAgentForm), pero
+  // no se listan acá para no mezclarlos con el equipo de trabajo.
+  const team = members.filter((m) => m.role !== "cliente");
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -48,7 +53,7 @@ export default function AgentsPage() {
         description="Invita a tus brokers (rol agente) o da acceso de solo lectura a un cliente."
       />
 
-      {loading ? <p className="text-sm text-muted-foreground">Cargando…</p> : <TeamList members={members} />}
+      {loading ? <p className="text-sm text-muted-foreground">Cargando…</p> : <TeamList members={team} />}
 
       <div>
         <h2 className="mb-4 text-lg font-medium">Invitar a alguien nuevo</h2>

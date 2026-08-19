@@ -48,6 +48,30 @@ export class RlsQueryService {
   }
 
   /**
+   * Corre `fn` como el rol `anon` de Postgres/Supabase — SÍ pasa por
+   * RLS, pero con las policies públicas (`to anon`), no las del
+   * usuario autenticado. Para endpoints que un visitante sin sesión
+   * puede llamar (la página pública de propiedades de un tenant): la
+   * protección real sigue viviendo en la base de datos, exactamente
+   * igual que `withUserContext`, solo que sin `auth.uid()`.
+   */
+  async asAnon<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SET LOCAL ROLE anon");
+      const result = await fn(client);
+      await client.query("COMMIT");
+      return result;
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Corre `fn` con el rol por defecto del pool (BYPASSRLS) — SIN
    * contexto de usuario, SIN RLS. Reservado exclusivamente para el
    * webhook de WhatsApp: esas requests las autentica Meta con una
