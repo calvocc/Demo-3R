@@ -81,28 +81,38 @@ export function InviteAgentForm({ onInvite }: Props) {
                 <option value="broker">Broker</option>
               </Select>
             </div>
-            {/* sm:col-span-2: ocupa todo el ancho del contenedor para
-                que el selector de indicativo (bandera + "+código") no
-                se vea cortado, como pasaba cuando compartía fila con
-                otro campo. */}
+            {/* sm:col-span-2: ocupa todo el ancho del contenedor (las
+                dos columnas del grid) para que la fila de indicativo +
+                número no se vea cortada. */}
             <div className="sm:col-span-2">
               <Label htmlFor="phoneNumber">Teléfono (WhatsApp)</Label>
               <p className="mb-1.5 text-xs text-muted-foreground">
                 A este número el bot le escribirá cuando un cliente pregunte por una de sus propiedades.
               </p>
               <div className="flex w-full gap-2">
-                <Select
-                  aria-label="Indicativo de país"
-                  value={dialCode}
-                  onChange={(e) => setDialCode(e.target.value)}
-                  className="w-auto min-w-[8.5rem] shrink-0"
-                >
-                  {AMERICAN_COUNTRY_CODES.map((c) => (
-                    <option key={c.iso} value={c.dialCode}>
-                      {c.flag} {c.dialCode} {c.iso}
-                    </option>
-                  ))}
-                </Select>
+                {/* El <Select> trae "w-full" en sus clases base (ver
+                    components/ui/select.tsx) — Tailwind decide qué
+                    utilidad de ancho gana por el orden en su hoja de
+                    estilos generada, NO por el orden del className, así
+                    que sobreescribirlo con "w-auto" ahí mismo no es
+                    confiable (por eso el selector de país quedaba más
+                    grande que el input de número). En vez de pelear esa
+                    clase, lo encerramos en un contenedor de ancho fijo
+                    y angosto: adentro, el propio w-full del <Select> se
+                    resuelve contra ESE ancho, no contra la fila entera. */}
+                <div className="w-[6.5rem] shrink-0">
+                  <Select
+                    aria-label="Indicativo de país"
+                    value={dialCode}
+                    onChange={(e) => setDialCode(e.target.value)}
+                  >
+                    {AMERICAN_COUNTRY_CODES.map((c) => (
+                      <option key={c.iso} value={c.dialCode}>
+                        {c.flag} {c.dialCode}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
                 <Input
                   id="phoneNumber"
                   type="tel"
@@ -110,7 +120,7 @@ export function InviteAgentForm({ onInvite }: Props) {
                   placeholder="3001234567"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="flex-1"
+                  className="min-w-0 flex-1"
                 />
               </div>
             </div>
