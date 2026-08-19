@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadGatewayException,
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { RlsQueryService } from "../common/db/rls-query.service";
 import { WhatsAppClientService } from "../common/whatsapp/whatsapp-client.service";
 import { normalizePhone } from "../common/utils/phone";
@@ -30,7 +35,17 @@ export class MessagesService {
   async send(userId: string, tenantId: string, dto: SendMessageDto) {
     const body = await this.resolveBody(userId, dto);
 
-    const { waMessageId } = await this.whatsapp.sendText(dto.to, body);
+    let waMessageId: string | null;
+    try {
+      ({ waMessageId } = await this.whatsapp.sendText(dto.to, body));
+    } catch (err) {
+      // sendText lanza un Error plano cuando Meta responde con un status
+      // no-OK (token vencido, número no autorizado, etc.) — sin este
+      // catch, ese Error sin clasificar llega tal cual a NestJS y sale
+      // como un 500 opaco. Lo convertimos en un error legible.
+      const message = err instanceof Error ? err.message : "Error desconocido";
+      throw new BadGatewayException(`No se pudo enviar el mensaje por WhatsApp: ${message}`);
+    }
 
     return this.rls.withUserContext(userId, async (client) => {
       // Se guarda normalizado (solo dígitos) porque el webhook entrante
