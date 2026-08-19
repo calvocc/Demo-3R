@@ -15,7 +15,7 @@ export default function PropertiesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canWrite = profile?.role === "owner" || profile?.role === "agente";
+  const canWrite = profile?.role === "owner" || profile?.role === "agente" || profile?.role === "broker";
   const accessToken = session?.access_token;
 
   async function load() {

@@ -7,7 +7,11 @@ import { apiFetch } from "./api";
 
 export interface Profile {
   tenantId: string;
-  role: "owner" | "agente" | "cliente";
+  role: "owner" | "agente" | "broker" | "cliente";
+  fullName: string | null;
+  // Nombre de la inmobiliaria — el sidebar lo muestra en vez del rol
+  // cuando quien está logueado es el owner.
+  tenantName: string | null;
 }
 
 interface AuthState {

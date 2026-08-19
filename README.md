@@ -128,11 +128,20 @@ Requiere la URL de Railway ya desplegada (Meta exige HTTPS público).
 
 ## Estructura de roles
 
-- **owner** — el primer usuario de una inmobiliaria. CRUD completo de
-  propiedades, invita agentes/clientes.
-- **agente** — CRUD completo de propiedades, ve mensajes, no invita gente.
-- **cliente** — solo lectura de propiedades, sin acceso a `/messages` ni
-  `/agents` (ni en la UI ni a nivel de RLS en la base de datos).
+- **owner** — el primer usuario de una inmobiliaria (la cuenta
+  representa a la inmobiliaria misma). CRUD completo de propiedades,
+  invita agentes/brokers, único rol con acceso a `/agents`.
+- **agente** / **broker** — mismos permisos: CRUD completo de
+  propiedades, ven mensajes, no invitan gente ni ven `/agents`. Es una
+  distinción de título nada más. Se invitan desde `/agents` con
+  nombre, correo y teléfono (indicativo + número) — ese teléfono es al
+  que el bot los contacta cuando un cliente pregunta por una de sus
+  propiedades.
+- **cliente** — rol heredado, ya no se invita desde `/agents` (los
+  clientes ahora navegan la página pública sin login, ver más abajo).
+  Las cuentas `cliente` existentes conservan solo lectura de
+  propiedades, sin acceso a `/messages` ni `/agents` (ni en la UI ni a
+  nivel de RLS en la base de datos).
 
 ## Página pública de propiedades
 

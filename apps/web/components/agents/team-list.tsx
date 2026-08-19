@@ -7,13 +7,14 @@ export interface TeamMember {
   id: string;
   full_name: string | null;
   email: string | null;
-  role: "owner" | "agente" | "cliente";
+  role: "owner" | "agente" | "broker" | "cliente";
   created_at: string;
 }
 
 const roleMeta: Record<TeamMember["role"], { label: string; variant: "primary" | "success" | "outline" }> = {
   owner: { label: "Owner", variant: "primary" },
   agente: { label: "Agente", variant: "success" },
+  broker: { label: "Broker", variant: "success" },
   cliente: { label: "Cliente", variant: "outline" },
 };
 

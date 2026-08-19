@@ -30,7 +30,7 @@ export default function AgentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.access_token]);
 
-  async function handleInvite(values: { email: string; fullName: string; role: "agente" | "cliente" }) {
+  async function handleInvite(values: { email: string; fullName: string; role: "agente" | "broker"; phone: string }) {
     const result = await apiFetch<{ tempPassword: string }>("/users/invite", session!.access_token, {
       method: "POST",
       body: values,
@@ -41,19 +41,19 @@ export default function AgentsPage() {
 
   if (profile && profile.role !== "owner") return null;
 
-  // Esta pantalla lista solo agentes. El registro del owner es la
-  // cuenta de la inmobiliaria misma (se crea sin datos de una persona
-  // — ver register_tenant en la migración 0002), no un colega a
-  // gestionar, así que no aparece acá; los clientes tampoco (se
-  // invitan igual, ver InviteAgentForm, pero se ocultan de este
-  // directorio de equipo).
-  const team = members.filter((m) => m.role === "agente");
+  // Esta pantalla lista solo personal de la inmobiliaria (agente y
+  // broker). El registro del owner es la cuenta de la inmobiliaria
+  // misma (se crea sin datos de una persona — ver register_tenant en
+  // la migración 0002), no un colega a gestionar, así que no aparece
+  // acá; los clientes ya no se invitan desde aquí (navegan la página
+  // pública sin login).
+  const team = members.filter((m) => m.role === "agente" || m.role === "broker");
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Agentes de tu inmobiliaria"
-        description="Invita a tus brokers (rol agente) o da acceso de solo lectura a un cliente."
+        description="Invita a tus agentes o brokers y registra el WhatsApp al que el bot los va a contactar."
       />
 
       {loading ? <p className="text-sm text-muted-foreground">Cargando…</p> : <TeamList members={team} />}

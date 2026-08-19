@@ -6,9 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { AMERICAN_COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/country-codes";
 
 interface Props {
-  onInvite: (values: { email: string; fullName: string; role: "agente" | "cliente" }) => Promise<{
+  onInvite: (values: {
+    email: string;
+    fullName: string;
+    role: "agente" | "broker";
+    phone: string;
+  }) => Promise<{
     tempPassword: string;
   }>;
 }
@@ -16,7 +22,9 @@ interface Props {
 export function InviteAgentForm({ onInvite }: Props) {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"agente" | "cliente">("agente");
+  const [role, setRole] = useState<"agente" | "broker">("agente");
+  const [dialCode, setDialCode] = useState(DEFAULT_COUNTRY_CODE.dialCode);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,12 +33,21 @@ export function InviteAgentForm({ onInvite }: Props) {
     e.preventDefault();
     setError(null);
     setResult(null);
+
+    const localDigits = phoneNumber.replace(/\D/g, "");
+    if (localDigits.length < 6) {
+      setError("Ingresa un número de teléfono válido");
+      return;
+    }
+    const phone = `${dialCode.replace("+", "")}${localDigits}`;
+
     setLoading(true);
     try {
-      const { tempPassword } = await onInvite({ email, fullName, role });
+      const { tempPassword } = await onInvite({ email, fullName, role, phone });
       setResult(`Usuario creado. Contraseña temporal: ${tempPassword} (compártela por un canal seguro)`);
       setEmail("");
       setFullName("");
+      setPhoneNumber("");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -59,10 +76,43 @@ export function InviteAgentForm({ onInvite }: Props) {
             </div>
             <div className="sm:col-span-2 sm:max-w-xs">
               <Label htmlFor="role">Rol</Label>
-              <Select id="role" value={role} onChange={(e) => setRole(e.target.value as "agente" | "cliente")}>
-                <option value="agente">Agente / broker</option>
-                <option value="cliente">Cliente (solo lectura)</option>
+              <Select id="role" value={role} onChange={(e) => setRole(e.target.value as "agente" | "broker")}>
+                <option value="agente">Agente</option>
+                <option value="broker">Broker</option>
               </Select>
+            </div>
+            {/* sm:col-span-2: ocupa todo el ancho del contenedor para
+                que el selector de indicativo (bandera + "+código") no
+                se vea cortado, como pasaba cuando compartía fila con
+                otro campo. */}
+            <div className="sm:col-span-2">
+              <Label htmlFor="phoneNumber">Teléfono (WhatsApp)</Label>
+              <p className="mb-1.5 text-xs text-muted-foreground">
+                A este número el bot le escribirá cuando un cliente pregunte por una de sus propiedades.
+              </p>
+              <div className="flex w-full gap-2">
+                <Select
+                  aria-label="Indicativo de país"
+                  value={dialCode}
+                  onChange={(e) => setDialCode(e.target.value)}
+                  className="w-auto min-w-[8.5rem] shrink-0"
+                >
+                  {AMERICAN_COUNTRY_CODES.map((c) => (
+                    <option key={c.iso} value={c.dialCode}>
+                      {c.flag} {c.dialCode} {c.iso}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  required
+                  placeholder="3001234567"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
             </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}

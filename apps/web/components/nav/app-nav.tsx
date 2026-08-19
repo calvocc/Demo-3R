@@ -16,10 +16,23 @@ import {
 } from "@/components/ui/icons";
 
 const roleLabels: Record<string, string> = {
-  owner: "Owner",
+  owner: "Cuenta de la inmobiliaria",
   agente: "Agente",
+  broker: "Broker",
   cliente: "Cliente",
 };
+
+/**
+ * Nombre a mostrar en el sidebar: el owner ES la cuenta de la
+ * inmobiliaria (se crea sin datos de una persona — ver register_tenant
+ * en 0002_rls_policies.sql), así que mostramos el nombre de la
+ * inmobiliaria; agente/broker son personas, así que mostramos su
+ * nombre. Si por lo que sea todavía no cargó, cae al label del rol.
+ */
+function displayName(profile: { role: string; fullName: string | null; tenantName: string | null }): string {
+  if (profile.role === "owner") return profile.tenantName ?? roleLabels.owner;
+  return profile.fullName ?? roleLabels[profile.role] ?? profile.role;
+}
 
 function useNavLinks() {
   const { profile } = useAuth();
@@ -81,14 +94,13 @@ function ProfileFooter() {
     router.replace("/login");
   }
 
+  const name = displayName(profile);
   return (
     <div className="flex items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/40 p-2">
-      <Avatar name={roleLabels[profile.role] ?? profile.role} size="sm" />
+      <Avatar name={name} size="sm" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-sidebar-foreground">
-          {roleLabels[profile.role] ?? profile.role}
-        </p>
-        <p className="truncate text-[11px] text-sidebar-foreground/60">Sesión activa</p>
+        <p className="truncate text-xs font-medium text-sidebar-foreground">{name}</p>
+        <p className="truncate text-[11px] text-sidebar-foreground/60">{roleLabels[profile.role] ?? profile.role}</p>
       </div>
       <button
         onClick={handleSignOut}
@@ -142,7 +154,7 @@ export function MobileTopbar() {
           <IconMenu />
         </button>
         <Brand />
-        <Avatar name={roleLabels[profile.role] ?? profile.role} size="sm" />
+        <Avatar name={displayName(profile)} size="sm" />
       </div>
 
       {open && (
