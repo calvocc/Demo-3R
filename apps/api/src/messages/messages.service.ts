@@ -51,15 +51,31 @@ export class MessagesService {
       // Se guarda normalizado (solo dígitos) porque el webhook entrante
       // recibe los números así (sin "+") — sin esto, un mensaje que
       // responde el cliente nunca hace match contra este contacto.
-      await client.query(
-        `insert into public.contacts (phone_number, tenant_id, last_agent_profile_id)
-         values ($1, $2, $3)
-         on conflict (phone_number)
-         do update set tenant_id = excluded.tenant_id,
-                        last_agent_profile_id = excluded.last_agent_profile_id,
-                        updated_at = now()`,
-        [normalizePhone(dto.to), tenantId, userId],
+      //
+      // UPDATE primero, INSERT como respaldo — a propósito, en vez de
+      // `insert ... on conflict do update`. Postgres exige que la fila
+      // en conflicto sea visible bajo la policy de SELECT de la tabla
+      // para poder resolver el conflicto, y `contacts_select_tenant`
+      // sigue (correctamente) restringida por tenant — así que un
+      // upsert nunca puede "reclamar" el contacto de otro tenant, por
+      // más que la policy de UPDATE sí lo permita. Un UPDATE simple no
+      // tiene esa dependencia de la policy de SELECT, solo de la de
+      // UPDATE (`contacts_update_tenant`), que es la que de verdad
+      // decide si se puede reclamar.
+      const normalizedPhone = normalizePhone(dto.to);
+      const { rowCount } = await client.query(
+        `update public.contacts
+         set tenant_id = $2, last_agent_profile_id = $3, updated_at = now()
+         where phone_number = $1`,
+        [normalizedPhone, tenantId, userId],
       );
+      if (rowCount === 0) {
+        await client.query(
+          `insert into public.contacts (phone_number, tenant_id, last_agent_profile_id)
+           values ($1, $2, $3)`,
+          [normalizedPhone, tenantId, userId],
+        );
+      }
 
       const { rows } = await client.query(
         `insert into public.messages
