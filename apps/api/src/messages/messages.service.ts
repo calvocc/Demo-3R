@@ -22,8 +22,15 @@ export class MessagesService {
       // conversación de chat normal. En orden descendente el hilo se
       // lee "al revés" y confunde al mezclar la propiedad enviada con
       // la respuesta del cliente.
+      //
+      // LEFT JOIN a properties para traer el título — el frontend
+      // agrupa las conversaciones por cliente y necesita mostrar a qué
+      // propiedad corresponde cada hilo, no solo el uuid.
       const { rows } = await client.query(
-        `select * from public.messages order by created_at asc`,
+        `select m.*, p.title as property_title
+         from public.messages m
+         left join public.properties p on p.id = m.related_property_id
+         order by m.created_at asc`,
       );
       return rows;
     });

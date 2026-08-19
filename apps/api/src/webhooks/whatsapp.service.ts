@@ -60,12 +60,24 @@ export class WhatsAppService {
       for (const change of entry.changes ?? []) {
         const value = change.value;
         const myNumber: string | undefined = value?.metadata?.display_phone_number;
+
+        // Meta manda el nombre de perfil de WhatsApp del remitente en un
+        // array separado (`contacts`), no adentro de cada mensaje —
+        // hay que cruzarlo por wa_id.
+        const contactNames = new Map<string, string>();
+        for (const contact of value?.contacts ?? []) {
+          if (contact?.wa_id && contact?.profile?.name) {
+            contactNames.set(contact.wa_id, contact.profile.name);
+          }
+        }
+
         for (const message of value?.messages ?? []) {
           await this.storeInboundMessage({
             waFrom: message.from,
             waTo: myNumber ?? "crm",
             body: message.text?.body ?? `[${message.type}]`,
             waMessageId: message.id,
+            contactName: contactNames.get(message.from) ?? null,
           });
           await this.sendAutoReply(message.from);
         }
@@ -78,6 +90,7 @@ export class WhatsAppService {
     waTo: string;
     body: string;
     waMessageId: string;
+    contactName: string | null;
   }): Promise<void> {
     await this.rls.asSystem(async (client) => {
       const { rows: contactRows } = await client.query(
@@ -87,9 +100,10 @@ export class WhatsAppService {
       const tenantId = contactRows[0]?.tenant_id ?? null;
 
       await client.query(
-        `insert into public.messages (tenant_id, direction, wa_from, wa_to, body, wa_message_id)
-         values ($1, 'inbound', $2, $3, $4, $5)`,
-        [tenantId, msg.waFrom, msg.waTo, msg.body, msg.waMessageId],
+        `insert into public.messages
+           (tenant_id, direction, wa_from, wa_to, body, wa_message_id, wa_contact_name)
+         values ($1, 'inbound', $2, $3, $4, $5, $6)`,
+        [tenantId, msg.waFrom, msg.waTo, msg.body, msg.waMessageId, msg.contactName],
       );
 
       if (!tenantId) {
