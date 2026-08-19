@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { RlsQueryService } from "../common/db/rls-query.service";
 import { WhatsAppClientService } from "../common/whatsapp/whatsapp-client.service";
+import { normalizePhone } from "../common/utils/phone";
 import { SendMessageDto } from "./dto/send-message.dto";
 
 @Injectable()
@@ -32,6 +33,9 @@ export class MessagesService {
     const { waMessageId } = await this.whatsapp.sendText(dto.to, body);
 
     return this.rls.withUserContext(userId, async (client) => {
+      // Se guarda normalizado (solo dígitos) porque el webhook entrante
+      // recibe los números así (sin "+") — sin esto, un mensaje que
+      // responde el cliente nunca hace match contra este contacto.
       await client.query(
         `insert into public.contacts (phone_number, tenant_id, last_agent_profile_id)
          values ($1, $2, $3)
@@ -39,7 +43,7 @@ export class MessagesService {
          do update set tenant_id = excluded.tenant_id,
                         last_agent_profile_id = excluded.last_agent_profile_id,
                         updated_at = now()`,
-        [dto.to, tenantId, userId],
+        [normalizePhone(dto.to), tenantId, userId],
       );
 
       const { rows } = await client.query(

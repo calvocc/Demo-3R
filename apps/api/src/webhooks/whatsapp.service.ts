@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { RlsQueryService } from "../common/db/rls-query.service";
+import { normalizePhone } from "../common/utils/phone";
 
 @Injectable()
 export class WhatsAppService {
@@ -70,7 +71,7 @@ export class WhatsAppService {
     await this.rls.asSystem(async (client) => {
       const { rows: contactRows } = await client.query(
         `select tenant_id from public.contacts where phone_number = $1`,
-        [msg.waFrom],
+        [normalizePhone(msg.waFrom)],
       );
       const tenantId = contactRows[0]?.tenant_id ?? null;
 
