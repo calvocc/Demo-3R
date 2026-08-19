@@ -69,12 +69,18 @@ export function PublicPropertyCard({ property }: { property: PublicProperty }) {
           </div>
         )}
 
+        {/* mt-auto: empuja el botón al fondo de la tarjeta sin importar
+            cuánto texto tenga arriba (título/descripción de largo
+            variable), para que quede alineado entre tarjetas de la
+            misma fila. Requiere que el contenedor padre sea flex-col
+            (ya lo es) — el article se estira a la altura de la fila
+            porque los ítems de grid se estiran por defecto. */}
         {PLATFORM_WHATSAPP_NUMBER && (
           <a
             href={buildWhatsAppContactUrl(property)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3"
+            className="mt-auto pt-3"
           >
             <Button variant="success" className="w-full">
               <IconMessage className="h-4 w-4" />
